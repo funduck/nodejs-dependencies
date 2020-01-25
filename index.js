@@ -1,13 +1,5 @@
 'use strict';
 
-/**
-Builds a tree of modules dependencies
-Saves it to file
-Merges multiple files
-
-See toJSON for details
-*/
-
 const fs = require('fs');
 const path = require('path');
 const d = require('./dependencies');
@@ -85,16 +77,7 @@ module.exports = class {
         d.saveTree(d.mergeTrees(this.tree, saved), file);
     }
 
-    /**
-    Get json document describing modules dependencies
-    {
-        "module file name": ["used in this module", "and in this too", ...]
-    }
-    For example, if project contains tests :) it helps finding tests for a module, not only personal, but for all other modules that use it
-    {
-        "some/module.js": ["other/module.js", "test/test_some_module.js", "test/test_other_module.js"]
-    }
-    */
+    /* Get json document describing modules dependencies */
     toJSON() {
         return d.treeToJson(this.tree);
     }
