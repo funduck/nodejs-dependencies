@@ -1,6 +1,6 @@
 {
-  "name": "dynamic-dependencies",
-  "version": "1.0.1",
+  "name": "nodejs-dynamic-dependencies",
+  "version": "1.0.0",
   "description": "Builds dependency tree for dynamic imports",
   "main": "index.js",
   "scripts": {
