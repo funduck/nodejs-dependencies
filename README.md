@@ -1,13 +1,22 @@
 # Dynamic dependencies
-*How not to run all the tests in a project every time?*  
-*How to run tests only for files changed in a commit?*  
-*How to track which tests cover which files?*  
-*How to run tests only for particular file?*  
+I want to run tests that cover only a part of project that has been changed  
+So I have to track dependencies in sources, even if they are dynamic, for example:
+```
+// static dependency
+const db = require('../db')
 
-These are the questions this module answers to.  
+function save(records, datatype) {
+    // dynamic dependency
+    const saver = require(`../savers/${datatype}`)
+    ...
+}
+```
 
-This module:
-* Can build a tree of dependencies between `*.js` files in a project (excluding node\_modules) and return it in JSON 
+## How this module works
+The idea is to recursively walk `module.children` starting from given module.  
+It works only after application runs for example after execution of tests.  
+
+* It builds a tree of dependencies between `*.js` files in a project (excluding node\_modules) and returns it in JSON 
 ```
 {
     "module file name": ["used in this module", "and in this too", ...]
@@ -17,23 +26,30 @@ This module:
 * Can load tree from file
 * Can merge multiple files
 
-## How it works
-The idea is to walk `module.children` starting from given module.  
-It works only after project runs, for example after its tests are executed.  
-Aim is to resolve dynamic imports which is impossible for static codebase analysis.  
+## How to use
+### Collect dependencies
+* run your project's tests and collect test files
+```
+const testFiles = new Set()
+...
+testFiles.add(testFileName)
+...
+```
+* when tests are done build dependencies
+```
+const Deps = require('nodejs-dynamic-dependencies')
+d.setProjectRoot(projectRoot)
+d.build(testFiles)
+```
+* save to file merging with existing
+```
+d.save(dependenciesFile, {
+    overwrite: false, // merge with existing if one is found
+    checkRemovedFiles: true
+})
+```
 
-## Main use case
-is supposed to be
-* run your project's test
-* build dependencies
-* save to file
-* run another test
-* build its dependencies
-* save to another file or merge with previous file
-* after all tests are done merge all files in one, you have full information "which tests cover which sources"
-
-**here comes what it is buit for**  
-
+### Use dependencies to find tests covering part of sources
 You have changed some sources and want to run test only for these files, so read dependencies file you have saved before
 ```
 {
@@ -41,10 +57,37 @@ You have changed some sources and want to run test only for these files, so read
 }
 ```
 And just take test files from the list for changed files.
+```
+function addTestFile(p) {
+    if (p.match(/node_modules/)) {
+        return
+    }
+    if (!p.match(testFileRegexp)) {
+        if (p.match(/\/test[^\.\/]+\.js/)) skippedTestCandidates.add(p)
+        return
+    }
+    if (!fs.existsSync(p)) {
+        return
+    }
+    testFiles.add(p)
+}
+
+const d = new Deps().load(dependenciesFile).toJSON()
+
+// files you want to cover with test, i.e. changed files
+filesToCover
+.forEach((file) => { 
+    const name = file.replace(projectRoot, '') // relative name as in tree
+    addTestFile(file);                         // adding file if is test file
+    (d[name] || []).forEach((t) => {
+        addTestFile(projectRoot + t)           // adding files, where 'file' is used
+    })
+})
+```
 
 ## When it doesn't help
-What to do if tests in a project are run with some `test_by_data.js` script that uses `*.json` files that describe actual tests?  
-While in for example **mocha** you can select which tests to run based on their title, dependency tree will tell you that for every file its test is `test_by_data.js` and you will have to run them all.
+Sometimes tests are data driven, for example `test_by_data.js` uses a lot of `*.json` files  
+Dependency tree not be able to tell which data-files `test_by_data.js` uses for which sources to test them.
 
 ## Example
 run `npm test`
