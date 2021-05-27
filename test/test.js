@@ -63,7 +63,7 @@ test('Instantiate new "Dependencies" object and build it for files "d" and "c", 
     });
 });
 test('save dc.json', () => {
-    dep.save(dc);
+    dep.save(dc, {});
 });
 
 test('load dc.json in another "Dependencies" and check that it is equal to originally built: c->d', () => {
@@ -84,7 +84,7 @@ test('Build "Dependencies" for files "a", "b", "c" it should be: c->b->a', () =>
 });
 
 test('save abc.json', () => {
-    dep.save(abc);
+    dep.save(abc, {});
 });
 
 test('load abc.json in another "Dependencies" and check that it is equal to originally built: c->b->a', () => {
@@ -108,7 +108,7 @@ test('load two files abc.json and dc.json and inclusions should be: c->b->a, c->
 });
 
 test('save abcd.json', () => {
-    dep.save(abcd);
+    dep.save(abcd, {});
 });
 
 test('remove file "a" and after checkRemovedFiles inclusions should be: c->b, c->d', () => {
@@ -123,7 +123,7 @@ test('remove file "a" and after checkRemovedFiles inclusions should be: c->b, c-
 });
 
 test('save abcd.json and loaded scheme should still contain file "a" because we merged data', () => {
-    dep.save(abcd);
+    dep.save(abcd, {});
     dep.load(abcd);
     console.log(dep.toJSON());
     assert.deepEqual(dep.toJSON(), {
@@ -136,7 +136,7 @@ test('save abcd.json and loaded scheme should still contain file "a" because we 
 
 test('save abcd.json overwriting the file, so loaded scheme should be without "a"', () => {
     dep.checkRemovedFiles();
-    dep.save(abcd, true);
+    dep.save(abcd, {overwrite: true});
     dep.load(abcd);
     console.log(dep.toJSON());
     assert.deepEqual(dep.toJSON(), {

@@ -1,5 +1,3 @@
-'use strict';
-
 const fs = require('fs');
 const path = require('path');
 const d = require('./dependencies');
@@ -19,11 +17,16 @@ module.exports = class {
         }
         this.projectRoot = projectRoot;
         if (this.projectRoot[this.projectRoot.length - 1] != '/') this.projectRoot += '/';
+
+        return this;
     }
 
     /* Build tree */
+    /**
+    @param {string | Array.<string> | Set.<string>} files
+    */
     build(...files) {
-        if (Array.isArray(files[0])) files = files[0];
+        if (Array.isArray(files[0]) || files[0] instanceof Set) files = files[0];
         const filesNames = new Set();
         files.forEach(file => {
             if (!fs.existsSync(file)) {
@@ -51,6 +54,8 @@ module.exports = class {
                 return d.getTree(m, this.projectRoot);
             })
         );
+
+        return this;
     }
 
     /* Load trees from files and merge with current */
@@ -61,20 +66,28 @@ module.exports = class {
         });
         if (this.tree) trees.push(this.tree);
         this.tree = d.mergeTrees(trees);
+
+        return this;
     }
 
     /* Remove references to removed files */
     checkRemovedFiles() {
         d.clearTreeFromRemovedFiles(this.tree, this.projectRoot);
+
+        return this;
     }
 
     /* Saving tree */
-    save(file, overwrite) {
+    save(file, {overwrite, checkRemovedFiles}) {
         if (!this.tree) {
             throw new Error('build tree first');
         }
         const saved = !overwrite && fs.existsSync(file) ? d.loadTree(file) : {};
-        d.saveTree(d.mergeTrees(this.tree, saved), file);
+        this.tree = d.mergeTrees(this.tree, saved)
+        if (checkRemovedFiles) {
+            this.checkRemovedFiles()
+        }
+        d.saveTree(this.tree, file);
     }
 
     /* Get json document describing modules dependencies */

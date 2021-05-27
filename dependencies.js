@@ -1,5 +1,3 @@
-'use strict';
-
 const fs = require('fs');
 
 /**
@@ -20,11 +18,11 @@ const jsonToTree = (json) => {
 
 const treeToJson = (tree) => {
     const json = {};
-    for (const name in tree) {
+    Object.keys(tree).sort().forEach(name => {
         const ar = [];
         for (const v of tree[name].values()) ar.push(v);
         json[name] = ar.sort();
-    }
+    });
     return json;
 };
 
@@ -47,7 +45,7 @@ Save Tree in a file
 @param {string} file
 */
 const saveTree = (tree, file) => {
-    fs.writeFileSync(file, JSON.stringify(treeToJson(tree)));
+    fs.writeFileSync(file, JSON.stringify(treeToJson(tree), null, '  '));
 };
 
 /**
@@ -162,6 +160,7 @@ const clearTreeFromRemovedFiles = (tree, projectRoot) => {
 
     const removed = new Set();
     const present = new Set();
+
     const exists = (name) => {
         if (!present.has(name) && 
            (removed.has(name) || !fs.existsSync(projectRoot + name))
